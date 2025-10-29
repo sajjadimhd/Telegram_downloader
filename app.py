@@ -5,6 +5,7 @@ import uuid
 import asyncio
 import time
 import logging
+import base64
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -17,6 +18,31 @@ api_hash = os.getenv('TELEGRAM_API_HASH', 'bf7e335fc5972530524fcaf427185157')
 
 # Phone is optional if session file exists
 phone = os.getenv('TELEGRAM_PHONE', None)
+
+# ترکیب کردن قسمت‌های session از environment variables
+session_parts = []
+i = 1
+while True:
+    part = os.getenv(f'SESSION_PART_{i}', None)
+    if part:
+        session_parts.append(part)
+        logger.info(f"Found SESSION_PART_{i}")
+        i += 1
+    else:
+        break
+
+if session_parts:
+    try:
+        session_base64 = ''.join(session_parts)
+        session_data = base64.b64decode(session_base64)
+        session_path = 'my_account.session'
+        with open(session_path, 'wb') as f:
+            f.write(session_data)
+        logger.info(f"✅ Session loaded from {len(session_parts)} parts")
+    except Exception as e:
+        logger.error(f"❌ Failed to load session: {e}")
+else:
+    logger.info("No SESSION_PART variables found, checking for existing session file")
 
 # Initialize Pyrogram client
 # If session file exists, phone is not needed
@@ -222,4 +248,5 @@ if __name__ == '__main__':
     logger.info(f"API ID: {api_id}")
     logger.info(f"Phone configured: {bool(phone)}")
     logger.info(f"Session file exists: {os.path.exists('my_account.session')}")
+
     app.run(host='0.0.0.0', port=port)
