@@ -35,14 +35,31 @@ if session_parts:
     try:
         session_base64 = ''.join(session_parts)
         session_data = base64.b64decode(session_base64)
-        session_path = 'my_account.session'
+        
+        # ذخیره در /tmp با دسترسی کامل
+        session_path = '/tmp/my_account.session'
         with open(session_path, 'wb') as f:
             f.write(session_data)
+        
+        # تنظیم permission
+        os.chmod(session_path, 0o600)
+        
         logger.info(f"✅ Session loaded from {len(session_parts)} parts")
+        logger.info(f"Session saved to: {session_path}")
+        logger.info(f"Session file size: {len(session_data)} bytes")
+        
+        # چک کردن فایل
+        if os.path.exists(session_path):
+            logger.info(f"✅ Session file verified at {session_path}")
+        else:
+            logger.error(f"❌ Session file not found after creation!")
+            
     except Exception as e:
         logger.error(f"❌ Failed to load session: {e}")
+        import traceback
+        logger.error(traceback.format_exc())
 else:
-    logger.info("No SESSION_PART variables found, checking for existing session file")
+    logger.warning("⚠️ No SESSION_PART variables found")
 
 # Initialize Pyrogram client
 # If session file exists, phone is not needed
@@ -250,3 +267,4 @@ if __name__ == '__main__':
     logger.info(f"Session file exists: {os.path.exists('my_account.session')}")
 
     app.run(host='0.0.0.0', port=port)
+
